@@ -209,17 +209,7 @@ function delay(ms){return new Promise(function(r){setTimeout(r,ms);});}
 function printLines(lines,baseDelay){
   baseDelay=baseDelay||30;
   var i=0;
-  return new Promise(function resolve(done){
-    if(i>=lines.length){done();return;}
-    var item=lines[i++];
-    var text=item[0],cls=item[1],d=item[2]!==undefined?item[2]:baseDelay;
-    setTimeout(function(){
-      appendLine(text,cls);
-      resolve(done);
-    },d);
-  }).then?undefined:undefined;
-
-  return (function loop(){
+  function loop(){
     if(i>=lines.length)return Promise.resolve();
     var item=lines[i++];
     var text=item[0],cls=item[1],d=item[2]!==undefined?item[2]:baseDelay;
@@ -227,7 +217,8 @@ function printLines(lines,baseDelay){
       appendLine(text,cls);
       return loop();
     });
-  })();
+  }
+  return loop();
 }
 
 function logQuery(cmd,risk){
