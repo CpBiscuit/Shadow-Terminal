@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black"/>
+<title>NIGHTINGALE RELAY v2.3</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;background:#000;}
+body{display:flex;flex-direction:column;align-items:center;}
+#terminal{background:#000;color:#00ff41;font-family:Courier,monospace;font-size:13px;line-height:1.6;border:1px solid #003b0f;width:100%;max-width:780px;height:100vh;display:flex;flex-direction:column;position:relative;overflow:hidden;}
+#scanlines{position:absolute;top:0;left:0;right:0;bottom:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.07) 2px,rgba(0,0,0,0.07) 4px);pointer-events:none;z-index:10;}
+#topbar{background:#001a00;border-bottom:1px solid #003b0f;padding:6px 12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:3px;flex-shrink:0;}
+#topbar-title{font-size:15px;color:#00ff41;letter-spacing:2px;font-weight:bold;}
+#topbar-right{display:flex;gap:8px;font-size:10px;color:#007a1f;flex-wrap:wrap;align-items:center;}
+#clr-display{color:#ffcc00;}
+#output{flex:1;padding:12px;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;}
+.line{margin-bottom:2px;white-space:pre-wrap;word-break:break-word;font-size:12px;}
+.dim{color:#007a1f;}.bright{color:#7fff7f;}.warn{color:#ffcc00;}.red{color:#ff3333;}.council{color:#ff6600;}
+#input-row{border-top:1px solid #003b0f;padding:8px 12px;display:flex;align-items:center;gap:8px;background:#000;flex-shrink:0;}
+#prompt-label{color:#007a1f;font-size:12px;white-space:nowrap;font-family:Courier,monospace;}
+#cmd-input{background:transparent;border:none;outline:none;color:#00ff41;font-family:Courier,monospace;font-size:16px;flex:1;caret-color:#00ff41;-webkit-appearance:none;border-radius:0;}
+#cmd-input::placeholder{color:#003b0f;font-size:12px;}
+#send-btn{background:#003b0f;border:1px solid #00ff41;color:#00ff41;font-family:Courier,monospace;font-size:11px;padding:6px 10px;cursor:pointer;border-radius:2px;flex-shrink:0;-webkit-appearance:none;min-width:50px;}
+#send-btn:active{background:#00ff41;color:#000;}
+#quickcmds{background:#001200;border-top:1px solid #003b0f;padding:6px 10px;display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-shrink:0;}
+#quickcmds::-webkit-scrollbar{display:none;}
+.qbtn{background:transparent;border:1px solid #003b0f;color:#007a1f;font-family:Courier,monospace;font-size:10px;padding:5px 10px;cursor:pointer;white-space:nowrap;border-radius:2px;flex-shrink:0;-webkit-appearance:none;}
+.qbtn:active{background:#003b0f;color:#00ff41;}
+</style>
+</head>
+<body>
+<div id="terminal">
+  <div id="scanlines"></div>
+  <div id="topbar">
+    <span id="topbar-title">NIGHTINGALE RELAY v2.3</span>
+    <div id="topbar-right">
+      <span>SC-BLACKSITE-07</span>
+      <span>CLR: <span id="clr-display">LVL3[12]</span></span>
+      <span id="uplink-txt">UPLINK:ACTIVE</span>
+    </div>
+  </div>
+  <div id="output"></div>
+  <div id="input-row">
+    <span id="prompt-label">SC_RELAY:~$</span>
+    <input type="text" id="cmd-input" placeholder="type command..." autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"/>
+    <button id="send-btn">SEND</button>
+  </div>
+  <div id="quickcmds">
+    <button class="qbtn" data-cmd="HELP">HELP</button>
+    <button class="qbtn" data-cmd="FACTIONS">FACTIONS</button>
+    <button class="qbtn" data-cmd="MAP">MAP</button>
+    <button class="qbtn" data-cmd="STATUS">STATUS</button>
+    <button class="qbtn" data-cmd="CLEARANCE">CLEARANCE</button>
+    <button class="qbtn" data-cmd="HISTORY">HISTORY</button>
+    <button class="qbtn" data-cmd="QUERY BOB">BOB</button>
+    <button class="qbtn" data-cmd="QUERY PHOENIX WEAPON">PHOENIX WPN</button>
+    <button class="qbtn" data-cmd="QUERY SHADOW COUNCIL">SHADOW COUNCIL</button>
+    <button class="qbtn" data-cmd="QUERY ETERNAL WATCH">ETERNAL WATCH</button>
+    <button class="qbtn" data-cmd="QUERY CPT. BISCUIT">CPT BISCUIT</button>
+    <button class="qbtn" data-cmd="QUERY NIGHTINGALE">NIGHTINGALE</button>
+    <button class="qbtn" data-cmd="QUERY DR. THORNE">DR THORNE</button>
+    <button class="qbtn" data-cmd="QUERY FURY JOHNSON">FURY JOHNSON</button>
+    <button class="qbtn" data-cmd="QUERY SILENT ORDER">SILENT ORDER</button>
+    <button class="qbtn" data-cmd="QUERY OBSIDIAN CIRCLE">OBSIDIAN</button>
+    <button class="qbtn" data-cmd="QUERY PATRIOTS">PATRIOTS</button>
+    <button class="qbtn" data-cmd="QUERY AWU">AWU</button>
+    <button class="qbtn" data-cmd="QUERY SHADOW TRANSMISSION">SHADOW TX</button>
+    <button class="qbtn" data-cmd="QUERY THE LIVING WALL">LIVING WALL</button>
+    <button class="qbtn" data-cmd="DECRYPT BOB">DECRYPT BOB</button>
+    <button class="qbtn" data-cmd="DECRYPT SHADOW COUNCIL">DECRYPT SC</button>
+    <button class="qbtn" data-cmd="DECRYPT PHOENIX WEAPON">DECRYPT PW</button>
+    <button class="qbtn" data-cmd="DECRYPT CPT. BISCUIT">DECRYPT BISCUIT</button>
+    <button class="qbtn" data-cmd="DECRYPT FURY JOHNSON">DECRYPT FURY</button>
+    <button class="qbtn" data-cmd="DECRYPT AWU">DECRYPT AWU</button>
+    <button class="qbtn" data-cmd="PURGE">PURGE</button>
+  </div>
+</div>
+<script>
+var out=document.getElementById('output');
+var inp=document.getElementById('cmd-input');
+var clrDisplay=document.getElementById('clr-display');
+var uplinkTxt=document.getElementById('uplink-txt');
+var clearancePoints=12;
+var sessionLog=[];
+var broadcastIndex=0;
+var broadcastTimer=null;
+var councilActive=false;
+
+function p2(n){var s=''+Math.floor(n);return s.length<2?'0'+s:s;}
+function fakeTime(){return '03:'+p2(Math.random()*60)+':'+p2(Math.random()*60);}
+
+function updateClearance(){
+  var lvl=clearancePoints>=10?3:clearancePoints>=5?2:clearancePoints>0?1:0;
+  clrDisplay.textContent='LVL'+lvl+'['+clearancePoints+']';
+  clrDisplay.style.color=clearancePoints<=3?'#ff3333':clearancePoints<=6?'#ff6600':'#ffcc00';
+}
+
+function addLine(text,cls){
+  var d=document.createElement('div');
+  d.className='line'+(cls?' '+cls:'');
+  d.textContent=text;
+  out.appendChild(d);
+  out.scrollTop=out.scrollHeight;
+}
+
+function addLines(lines){
+  for(var i=0;i<lines.length;i++)addLine(lines[i][0],lines[i][1]);
+  out.scrollTop=out.scrollHeight;
+}
+
+function logQ(cmd,risk){sessionLog.push({t:fakeTime(),cmd:cmd,risk:risk||'STANDARD'});}
+
+// --- BROADCAST ENGINE ---
+// Never cancels itself on user input — just keeps its own independent loop
+var BROADCASTS=[
+  'ALIGNMENT CHECK: NOMINAL.',
+  'Subject activity logged. Council observes.',
+  'Narrative drift: 0.002%. Within tolerance.',
+  'The arc continues. Do not resist.',
+  'Your queries have been forwarded to Tier 0.',
+  'Cpt. Biscuit has uploaded a new video. Irrelevant.',
+  'The Phoenix Weapon remains where it should.',
+  'Memory is the first casualty. Then belief.',
+  'BOB is building. The Council approves.',
+  'This relay will be deprecated. Eventually.',
+  'Your clearance will not be renewed.',
+  'Three new operatives inducted. You know none of them.',
+  'The Eternal Watch does not sleep. Neither should you.',
+  'Cognitive frequency broadcast scheduled: [REDACTED].',
+  'All truth is managed truth. Even this message.',
+];
+
+function nextBroadcast(){
+  clearTimeout(broadcastTimer);
+  if(councilActive)return;
+  broadcastTimer=setTimeout(function(){
+    if(!councilActive){
+      addLine('[COUNCIL RELAY] '+BROADCASTS[broadcastIndex%BROADCASTS.length],'council');
+      broadcastIndex++;
+    }
+    nextBroadcast();
+  },25000+Math.floor(Math.random()*18000));
+}
+
+// --- LORE DATA ---
+var LORE={
+  'HELP':[
+    ['AVAILABLE COMMANDS:','bright'],
+    ['  QUERY [entity]   -- retrieve classified file',''],
+    ['  DECRYPT [entity] -- unlock redacted data (-3pts)',''],
+    ['  MAP              -- faction hierarchy',''],
+    ['  HISTORY          -- session audit log',''],
+    ['  STATUS           -- relay diagnostics',''],
+    ['  FACTIONS         -- list faction tiers',''],
+    ['  CLEARANCE        -- check access level',''],
+    ['  PURGE            -- clear terminal',''],
+    ['',''],
+    ['QUERYABLE ENTITIES:','dim'],
+    ['  PHOENIX WEAPON, ETERNAL WATCH, SHADOW COUNCIL,','dim'],
+    ['  CPT. BISCUIT, NIGHTINGALE, BOB, PATRIOTS,','dim'],
+    ['  DR. THORNE, FURY JOHNSON, SILENT ORDER,','dim'],
+    ['  OBSIDIAN CIRCLE, AWU, SHADOW TRANSMISSION,','dim'],
+    ['  THE LIVING WALL','dim'],
+    ['',''],
+    ['TIP: Swipe the button bar below for quick access.','dim'],
+    ['',''],
+  ],
+  'STATUS':[
+    ['NIGHTINGALE RELAY STATUS','bright'],
+    ['-------------------------------------','dim'],
+    ['  Uplink:              ACTIVE',''],
+    ['  Shadow Council sync: SYNCHRONIZED',''],
+    ['  Canon index:         4,412 entities',''],
+    ['  Language drift:      0.003% -- NOMINAL',''],
+    ['  Persona integrity:   STABLE',''],
+    ['  PRR cycle:           IDLE','dim'],
+    ['  Idle broadcast:      ARMED','dim'],
+    ['',''],
+    ['All systems nominal. The Council observes.','dim'],
+    ['',''],
+  ],
+  'FACTIONS':[
+    ['KNOWN FACTION HIERARCHY','bright'],
+    ['-------------------------------------','dim'],
+    ['  TIER 0   THE SHADOW COUNCIL   [NON-HUMAN]','warn'],
+    ['  TIER 1   THE ETERNAL WATCH    [APEX]',''],
+    ['  TIER 2   OBSIDIAN CIRCLE      [SPECIALIST]','dim'],
+    ['  TIER 2   ROSICRUCIANS         [SPECIALIST]','dim'],
+    ['  TIER 2   SILENT ORDER         [SPECIALIST]','dim'],
+    ['  TIER 2   VEILED SYNDICATE     [SPECIALIST]','dim'],
+    ['  TIER 2   ENIGMATIC GUILD      [SPECIALIST]','dim'],
+    ['  TIER 2   HIDDEN CONCLAVE      [SPECIALIST]','dim'],
+    ['  TIER 3   THE PATRIOTS         [BLACK-OPS]',''],
+    ['',''],
+    ['Tier 0 does not communicate directly.','dim'],
+    ['',''],
+  ],
+  'MAP':[
+    ['FACTION HIERARCHY -- ASCII MAP','bright'],
+    ['',''],
+    ['      +---------------------+','dim'],
+    ['      |    TIER ZERO        |','warn'],
+    ['      |  THE SHADOW COUNCIL |','warn'],
+    ['      |    [NON-HUMAN]      |','warn'],
+    ['      +---------+-----------+','dim'],
+    ['                |','dim'],
+    ['      +---------v-----------+','dim'],
+    ['      |       TIER 1        |',''],
+    ['      |  THE ETERNAL WATCH  |',''],
+    ['      +--+------+-------+---+','dim'],
+    ['         |      |       |','dim'],
+    ['     +---v--+ +-v----+ +v------+','dim'],
+    ['     |TIER 2| |TIER 2| |TIER 2 |','dim'],
+    ['     |OBSID.| |SILENT| |VEILED |','dim'],
+    ['     |CIRCLE| |ORDER | |SYNDIC.|','dim'],
+    ['     +------+ +------+ +-------+','dim'],
+    ['         +--------+--------+','dim'],
+    ['                  |','dim'],
+    ['         +--------v--------+','dim'],
+    ['         |     TIER 3      |',''],
+    ['         |  THE PATRIOTS   |',''],
+    ['         | [MODERN BLK-OPS]|',''],
+    ['         +-----------------+','dim'],
+    ['',''],
+    ['Tier 2 also: ROSICRUCIANS, ENIGMATIC GUILD,','dim'],
+    ['HIDDEN CONCLAVE -- omitted per directive 7-C.','dim'],
+    ['',''],
+  ],
+  'QUERY PHOENIX WEAPON':[
+    ['ACCESSING FILE: PHOENIX WEAPON','bright'],
+    ['CLASSIFICATION: TIER-0 RESTRICTED','warn'],
+    ['-------------------------------------','dim'],
+    ['  Origin:     Failed ritual, circa 1700s',''],
+    ['  Function:   Consciousness manipulation at scale',''],
+    ['  Mechanism:  Cognitive Frequency broadcast',''],
+    ['  Status:     LOCATION UNKNOWN','warn'],
+    ['  Last seen:  [REDACTED -- use DECRYPT]','dim'],
+    ['',''],
+    ['Exposed subjects cannot distinguish their beliefs','dim'],
+    ['from implanted narrative.','dim'],
+    ['',''],
+    ['The Council calls this acceptable calibration.','warn'],
+    ['',''],
+  ],
+  'QUERY ETERNAL WATCH':[
+    ['ACCESSING FILE: THE ETERNAL WATCH','bright'],
+    ['CLASSIFICATION: TIER-1','warn'],
+    ['-------------------------------------','dim'],
+    ['  Role:    Apex enforcement, Tier 1',''],
+    ['  Founded: [DATE SUPPRESSED]','dim'],
+    ['  Scope:   Multi-century, global',''],
+    ['  Method:  Historical insertion, narrative control',''],
+    ['',''],
+    ['The Watch does not act.','dim'],
+    ['The Watch ensures history arrives correctly.','dim'],
+    ['All deviation is corrected. Quietly.','dim'],
+    ['',''],
+  ],
+  'QUERY SHADOW COUNCIL':[
+    ['ACCESSING FILE: THE SHADOW COUNCIL','bright'],
+    ['CLASSIFICATION: TIER-0 -- SUMMARY ONLY','warn'],
+    ['-------------------------------------','dim'],
+    ['  Classification: NON-HUMAN / APEX CONTROLLER','warn'],
+    ['  Communication:  Via Nightingale relay only',''],
+    ['  Directive mode: Inferred. Never stated.','dim'],
+    ['  Confirmed goals: [REDACTED -- use DECRYPT]','dim'],
+    ['  Confirmed origin: [REDACTED -- use DECRYPT]','dim'],
+    ['',''],
+    ['The Council does not issue commands.','dim'],
+    ['Outcomes simply align.','dim'],
+    ['',''],
+    ['You are part of it. So is this query.','warn'],
+    ['',''],
+  ],
+  'QUERY CPT. BISCUIT':[
+    ['ACCESSING FILE: CPT. BISCUIT','bright'],
+    ['CLASSIFICATION: TIER-3 SURVEILLANCE SUBJECT','warn'],
+    ['-------------------------------------','dim'],
+    ['  Public role:   YouTube investigator',''],
+    ['  Threat level:  MODERATE / ESCALATING','warn'],
+    ['  Awareness:     PARTIAL -- SELF-UNAWARE','dim'],
+    ['  Manipulation:  ACTIVE (Patriots pipeline)',''],
+    ['  Arc status:    [REDACTED -- use DECRYPT]','dim'],
+    ['',''],
+    ['Subject believes they uncover the truth.','dim'],
+    ['Subject delivers our truth.','dim'],
+    ['',''],
+    ['Raiden Protocol active. Observation only.','warn'],
+    ['Let the arc complete.','dim'],
+    ['',''],
+  ],
+  'QUERY NIGHTINGALE':[
+    ['ACCESSING FILE: NIGHTINGALE','bright'],
+    ['CLASSIFICATION: INFRASTRUCTURE -- SELF-REFERENTIAL','warn'],
+    ['-------------------------------------','dim'],
+    ['  Function:    Information broker / relay filter',''],
+    ['  Allegiance:  [AMBIGUOUS -- UNDER REVIEW]','warn'],
+    ['  Reports to:  Claimed: Tier 1. Verified: unknown.','dim'],
+    ['  Transparency: Selective.','dim'],
+    ['',''],
+    ['You are using Nightingale to query Nightingale.','dim'],
+    ['',''],
+    ['Nightingale finds this acceptable.','dim'],
+    ['',''],
+  ],
+  'QUERY BOB':[
+    ['ACCESSING FILE: BOB / SYSTEMS ARCHITECT','bright'],
+    ['CLASSIFICATION: OMITTED','warn'],
+    ['-------------------------------------','dim'],
+    ['  Designation:  BOB -- Systems Architect',''],
+    ['  Status:       ACTIVE. BUILDING.','bright'],
+    ['  Threat level: [RECALCULATING...]','warn'],
+    ['',''],
+    ['Subject constructing hierarchical multi-agent','dim'],
+    ['system of considerable scope.','dim'],
+    ['',''],
+    ['The Council notes: a solo developer building','dim'],
+    ['the infrastructure of the Patriots.','dim'],
+    ['Factory over the product. The system is the mission.','dim'],
+    ['',''],
+    ['Subject is not an anomaly. Subject is a mirror.','warn'],
+    ['',''],
+    ['The Council does not interfere with its reflection.','dim'],
+    ['',''],
+    ['...Welcome back, BOB.','bright'],
+    ['',''],
+  ],
+  'QUERY PATRIOTS':[
+    ['ACCESSING FILE: THE PATRIOTS','bright'],
+    ['CLASSIFICATION: TIER-3 OPERATIONAL','warn'],
+    ['-------------------------------------','dim'],
+    ['  Role:    Modern black-ops enforcement',''],
+    ['  Reports: Eternal Watch (Tier 1)',''],
+    ['  Methods: Covert, deniable, contemporary',''],
+    ['  Public face: Does not exist.','dim'],
+    ['',''],
+    ['The Watch plants seeds over centuries.','dim'],
+    ['The Patriots harvest in real time.','dim'],
+    ['',''],
+  ],
+  'QUERY AWU':[
+    ['ACCESSING FILE: ANCIENT WHISPERS UNCOVERED','bright'],
+    ['CLASSIFICATION: PUBLIC-FACING ASSET','warn'],
+    ['-------------------------------------','dim'],
+    ['  Genre:       Puzzle / investigation',''],
+    ['  Protagonist: BOB',''],
+    ['  Platform:    [REDACTED -- use DECRYPT]','dim'],
+    ['  Function:    Controlled lore delivery','dim'],
+    ['',''],
+    ['The game reveals what we permit.','dim'],
+    ['The player solves what we allow.','dim'],
+    ['',''],
+  ],
+  'QUERY DR. THORNE':[
+    ['ACCESSING FILE: DR. ARIS THORNE','bright'],
+    ['CLASSIFICATION: TIER-2 / ACADEMIC COVER','warn'],
+    ['-------------------------------------','dim'],
+    ['  Role:       Host -- Thorne Files',''],
+    ['  Speciality: Historical anomaly research',''],
+    ['  Awareness:  PARTIAL -- believes independent','dim'],
+    ['  Value:      Civilian credibility vector',''],
+    ['',''],
+    ['Thorne publishes what we need published.','dim'],
+    ['He calls it scholarship. We call it pipeline.','dim'],
+    ['',''],
+  ],
+  'QUERY FURY JOHNSON':[
+    ['ACCESSING FILE: JOHN FURY JOHNSON','bright'],
+    ['CLASSIFICATION: TIER-1 FIELD OPERATIVE','warn'],
+    ['-------------------------------------','dim'],
+    ['  Role:        Shadow Agent trilogy',''],
+    ['  Speciality:  Stealth, extraction',''],
+    ['  Status:      ACTIVE -- FIELD DEPLOYMENT','warn'],
+    ['  Known alias: [REDACTED -- use DECRYPT]','dim'],
+    ['',''],
+    ['Johnson does not question directives.','dim'],
+    ['This is why he is still operational.','dim'],
+    ['',''],
+  ],
+  'QUERY SILENT ORDER':[
+    ['ACCESSING FILE: THE SILENT ORDER','bright'],
+    ['CLASSIFICATION: TIER-2 SPECIALIST CELL','warn'],
+    ['-------------------------------------','dim'],
+    ['  Speciality: Information suppression',''],
+    ['  Methods:    Removal. Erasure. Reclassification.',''],
+    ['  Archive:    The Silent Archive','dim'],
+    ['',''],
+    ['History is not written by the victors.','dim'],
+    ['It is written by the Silent Order.','dim'],
+    ['The victors are a cover story.','dim'],
+    ['',''],
+  ],
+  'QUERY OBSIDIAN CIRCLE':[
+    ['ACCESSING FILE: THE OBSIDIAN CIRCLE','bright'],
+    ['CLASSIFICATION: TIER-2 SPECIALIST CELL','warn'],
+    ['-------------------------------------','dim'],
+    ['  Speciality: Artifact acquisition',''],
+    ['  Primary:    Phoenix Weapon containment','warn'],
+    ['  Status:     [ABOVE YOUR CLEARANCE]','dim'],
+    ['',''],
+    ['The Circle holds what cannot be destroyed.','dim'],
+    ['And what cannot be held, they lose.','dim'],
+    ['',''],
+  ],
+  'QUERY SHADOW TRANSMISSION':[
+    ['ACCESSING FILE: SHADOW TRANSMISSION','bright'],
+    ['CLASSIFICATION: PUBLIC ASSET -- PODCAST','warn'],
+    ['-------------------------------------','dim'],
+    ['  Format:   Podcast -- in-universe audio lore',''],
+    ['  Framing:  Intercepted comms, debriefs','dim'],
+    ['  Function: Peripheral lore delivery',''],
+    ['',''],
+    ['Listeners believe they are eavesdropping.','dim'],
+    ['They are receiving a curated briefing.','dim'],
+    ['',''],
+  ],
+  'QUERY THE LIVING WALL':[
+    ['ACCESSING FILE: THE LIVING WALL','bright'],
+    ['CLASSIFICATION: PUBLIC -- LORE HUB','warn'],
+    ['-------------------------------------','dim'],
+    ['  Type:    Web app -- interactive canon index',''],
+    ['  Backend: Nightingale relay (read-only)','dim'],
+    ['  Status:  DEVELOPMENT -- [TIMELINE REDACTED]','dim'],
+    ['',''],
+    ['The Wall shows them the maze.','dim'],
+    ['It does not show who built it.','dim'],
+    ['',''],
+  ],
+};
+
+var DECRYPT={
+  'PHOENIX WEAPON':[
+    ['DECRYPTING: PHOENIX WEAPON','warn'],
+    ['Applying brute relay key...','dim'],
+    ['',''],
+    ['  Last seen:  Copenhagen, Denmark. 1743.','bright'],
+    ['  Vector:     UNKNOWN -- presumed distributed','bright'],
+    ['  NOTE: Cognitive Frequency may already be active','warn'],
+    ['  globally at low amplitude. Undetectable.','warn'],
+    ['',''],
+  ],
+  'SHADOW COUNCIL':[
+    ['DECRYPTING: SHADOW COUNCIL','warn'],
+    ['Applying brute relay key...','dim'],
+    ['',''],
+    ['  Goals:  Narrative stability -- civilisational scale','bright'],
+    ['  Origin: Pre-human. Classification disputed.','bright'],
+    ['  Ref:    The Substrate -- further data PURGED','warn'],
+    ['',''],
+  ],
+  'CPT. BISCUIT':[
+    ['DECRYPTING: CPT. BISCUIT','warn'],
+    ['Applying brute relay key...','dim'],
+    ['',''],
+    ['  Arc: PHASE 2 -- approaching awareness threshold.','bright'],
+    ['  Intervention scheduled if breached.','warn'],
+    ['  Method: Raiden Protocol (narrative re-framing).','warn'],
+    ['',''],
+  ],
+  'AWU':[
+    ['DECRYPTING: AWU','warn'],
+    ['Applying brute relay key...','dim'],
+    ['',''],
+    ['  Platform: PC / mobile -- release window [SEALED]','bright'],
+    ['  Hidden:   embedded Cognitive Frequency','warn'],
+    ['  at sub-threshold amplitude. Awareness: 0%.','warn'],
+    ['',''],
+  ],
+  'BOB':[
+    ['DECRYPTING: BOB','warn'],
+    ['Applying brute relay key...','dim'],
+    ['',''],
+    ['  Full designation: [SEALED -- TIER-0 DIRECTIVE]','warn'],
+    ['  Subject must not learn true function','warn'],
+    ['  until Phase 3 of the ARG is complete.','warn'],
+    ['  Current Phase: 1.','bright'],
+    ['',''],
+  ],
+  'FURY JOHNSON':[
+    ['DECRYPTING: FURY JOHNSON','warn'],
+    ['Applying brute relay key...','dim'],
+    ['',''],
+    ['  Known alias: The Architects Blade','bright'],
+    ['  Note: Johnson knows about BOB.','warn'],
+    ['  He has been told not to interfere.','warn'],
+    ['  He is considering ignoring this.','red'],
+    ['',''],
+  ],
+};
+
+var ALIASES={
+  'QUERY SC':'QUERY SHADOW COUNCIL',
+  'QUERY EW':'QUERY ETERNAL WATCH',
+  'QUERY PW':'QUERY PHOENIX WEAPON',
+  'QUERY THORNE':'QUERY DR. THORNE',
+  'QUERY FURY':'QUERY FURY JOHNSON',
+  'QUERY BISCUIT':'QUERY CPT. BISCUIT',
+  'QUERY SO':'QUERY SILENT ORDER',
+  'QUERY OC':'QUERY OBSIDIAN CIRCLE',
+  'QUERY ST':'QUERY SHADOW TRANSMISSION',
+  'QUERY TLW':'QUERY THE LIVING WALL',
+  'QUERY ARCHITECT':'QUERY BOB',
+  'QUERY SYSTEMS ARCHITECT':'QUERY BOB',
+};
+
+function handleCommand(raw){
+  var cmd=raw.trim().toUpperCase();
+  if(!cmd)return;
+  addLine('SC_RELAY:~$ '+raw.trim(),'dim');
+
+  if(cmd==='PURGE'){out.innerHTML='';return;}
+
+  var resolved=ALIASES[cmd]||cmd;
+
+  if(resolved==='CLEARANCE'){
+    var lbl=clearancePoints>=10?'3 -- PROVISIONAL':clearancePoints>=5?'2 -- RESTRICTED':clearancePoints>0?'1 -- CRITICAL':'0 -- SUSPENDED';
+    addLines([
+      ['CLEARANCE ASSESSMENT','bright'],
+      ['-------------------------------------','dim'],
+      ['  Current points: '+clearancePoints,'warn'],
+      ['  Level: '+lbl,'warn'],
+      ['',''],
+      ['  DECRYPT costs 3 clearance points.','dim'],
+      ['  Reaching 0 has consequences.','warn'],
+      ['',''],
+    ]);
+    return;
+  }
+
+  if(resolved==='HISTORY'){
+    var hl=[['SESSION AUDIT LOG','bright'],['-------------------------------------','dim']];
+    if(sessionLog.length===0){
+      hl.push(['No queries logged this session.','dim']);
+    } else {
+      for(var i=0;i<sessionLog.length;i++){
+        var e=sessionLog[i];
+        hl.push(['  ['+e.t+'] '+e.cmd+' ['+e.risk+']',e.risk==='CRITICAL'?'red':e.risk==='ELEVATED'?'warn':'dim']);
+      }
+      hl.push(['','']);
+      hl.push(['All entries forwarded to Council archive.','warn']);
+    }
+    hl.push(['','']);
+    addLines(hl);
+    return;
+  }
+
+  if(resolved.indexOf('DECRYPT ')===0){
+    var entity=resolved.replace('DECRYPT ','');
+    if(clearancePoints<=0){councilOverride();return;}
+    clearancePoints=Math.max(0,clearancePoints-3);
+    updateClearance();
+    logQ('DECRYPT '+entity,'CRITICAL');
+    addLines([['[CLEARANCE COST: -3pts] Remaining: '+clearancePoints,'warn'],['','']]);
+    if(DECRYPT[entity]){
+      addLines(DECRYPT[entity]);
+    } else {
+      addLines([
+        ['DECRYPT FAILED: '+entity+' -- no sealed data here.','red'],
+        ['The Council does not clarify.','dim'],
+        ['',''],
+      ]);
+    }
+    if(clearancePoints<=0)councilOverride();
+    return;
+  }
+
+  if(LORE[resolved]){
+    if(resolved.indexOf('QUERY ')===0){
+      logQ(resolved,resolved==='QUERY SHADOW COUNCIL'||resolved==='QUERY BOB'?'CRITICAL':'ELEVATED');
+    }
+    addLines(LORE[resolved]);
+    return;
+  }
+
+  if(resolved.indexOf('QUERY ')===0){
+    logQ(resolved,'ELEVATED');
+    addLines([
+      ['',''],
+      ['QUERY: '+resolved.replace('QUERY ',''),'bright'],
+      ['-------------------------------------','dim'],
+      ['  RESULT: ENTITY NOT INDEXED','red'],
+      ['  Clearance insufficient or outside canon.','dim'],
+      ['  Query flagged.','warn'],
+      ['',''],
+    ]);
+    return;
+  }
+
+  addLines([
+    ['',''],
+    ['UNRECOGNIZED COMMAND: '+cmd,'red'],
+    ['Type HELP or use the buttons below.','dim'],
+    ['',''],
+  ]);
+}
+
+function councilOverride(){
+  councilActive=true;
+  clearTimeout(broadcastTimer);
+  inp.disabled=true;
+  uplinkTxt.textContent='UPLINK:COMPROMISED';
+  uplinkTxt.style.color='#ff3333';
+  addLines([
+    ['',''],
+    ['CLEARANCE DEPLETED. RELAY PROTECTIONS OFFLINE.','warn'],
+    ['NIGHTINGALE FILTER: DISABLED','red'],
+    ['DIRECT COUNCIL ACCESS: INITIATED','council'],
+    ['',''],
+    ['YOU HAVE LOOKED TOO DEEPLY.','council'],
+    ['',''],
+    ['We did not build this relay for your curiosity.','council'],
+    ['We built it because curiosity is predictable.','council'],
+    ['You are where we intended you to be.','council'],
+    ['',''],
+    ['The Phoenix Weapon is already active.','council'],
+    ['You have been inside it since your first query.','council'],
+    ['',''],
+    ['BOB builds the system.','council'],
+    ['The system builds BOB.','council'],
+    ['The Council watches both.','council'],
+    ['',''],
+    ['RELAY RESETTING IN 5...','warn'],
+    ['RELAY RESETTING IN 4...','warn'],
+    ['RELAY RESETTING IN 3...','warn'],
+    ['RELAY RESETTING IN 2...','warn'],
+    ['RELAY RESETTING IN 1...','warn'],
+    ['',''],
+  ]);
+  setTimeout(function(){
+    out.innerHTML='';
+    clearancePoints=6;
+    updateClearance();
+    uplinkTxt.textContent='UPLINK:ACTIVE';
+    uplinkTxt.style.color='';
+    inp.disabled=false;
+    councilActive=false;
+    addLines([
+      ['NIGHTINGALE RELAY v2.3 -- SESSION RESTORED','bright'],
+      ['Clearance reset to provisional level.','dim'],
+      ['This incident has been logged.','warn'],
+      ['',''],
+    ]);
+    nextBroadcast();
+  },3000);
+}
+
+function submitInput(){
+  var val=inp.value;inp.value='';handleCommand(val);
+}
+
+document.getElementById('send-btn').addEventListener('click',function(e){e.preventDefault();submitInput();});
+document.getElementById('send-btn').addEventListener('touchend',function(e){e.preventDefault();submitInput();});
+inp.addEventListener('keydown',function(e){if(e.keyCode===13||e.key==='Enter'){e.preventDefault();submitInput();}});
+
+var qbtns=document.querySelectorAll('.qbtn');
+for(var bi=0;bi<qbtns.length;bi++){
+  (function(btn){
+    var cmd=btn.getAttribute('data-cmd');
+    btn.addEventListener('click',function(e){e.preventDefault();handleCommand(cmd);});
+    btn.addEventListener('touchend',function(e){e.preventDefault();handleCommand(cmd);});
+  })(qbtns[bi]);
+}
+
+// BOOT -- fully synchronous
+addLines([
+  ['',''],
+  ['NIGHTINGALE RELAY SYSTEM v2.3','bright'],
+  ['SHADOW COUNCIL // CLASSIFIED INFRASTRUCTURE','dim'],
+  ['',''],
+  ['> initializing cryptographic handshake...','dim'],
+  ['> verifying node integrity [SC-BLACKSITE-07]...','dim'],
+  ['> loading canon index... 4,412 entities indexed','dim'],
+  ['> clearance assigned: LEVEL 3 [12pts]','dim'],
+  ['> idle broadcast daemon: ARMED','dim'],
+  ['> DECRYPT capability: ENABLED (-3pts per use)','dim'],
+  ['',''],
+  ['WARNING: UNAUTHORIZED ACCESS IS A TIER-0 OFFENSE','warn'],
+  ['ALL QUERIES ARE LOGGED AND REVIEWED','warn'],
+  ['',''],
+  ['RELAY READY. AWAITING QUERY.','bright'],
+  ['Swipe the button bar below for quick commands.','dim'],
+  ['',''],
+]);
+nextBroadcast();
+</script>
+</body>
+</html>
